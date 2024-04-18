@@ -13,7 +13,8 @@ Apt install frr(для frr, на всех роутерах(HQ, BR, ISP)
 Apt install isc-dhcp-server(для dhcp, только на HQ)
 Apt install radvd(настройка маршрутизации)
 Apt install iperf3(для измерения пропускной способности на 2х маршрутизаторах HQ и ISP)
-Apt install bind9 dnsutils(пакеты для днс будет стоять на сервере)
+Apt install bind9 dnsutils(пакеты для днс будет стоять на сервере)(не надо)
+apt install iptables-persistent(SRV для ssh)
 
 Если закачка не идет то нужно вводить эти команды пока не заработает:
 Dhclient -r
@@ -126,7 +127,7 @@ autoritative;
 
 radvd
 После установки нужно сконфигурировать файл по пути /etc/radvd.conf следующего содержания
-interface ens*
+interface ens* (в сторону сервера, клиента)
 {
 MinRtrAdvInterval 3;
 MaxRtrAdvInterval 60;
@@ -142,9 +143,9 @@ adduser admin/branch/network
 P@ssword
 Admin/Branch admin/Network admin
 Так же возможно понадобится выдать Root права для данных клиентов это можно выполнить посредством команды visudo
-admin   ALL=(ALL:ALL) ALL
-branch  ALL=(ALL:ALL) ALL
-network ALL=(ALL:ALL) ALL
+admin   ALL=(ALL:ALL) ALL (CLI HQ-SRV HQ-R)
+branch  ALL=(ALL:ALL) ALL (BR-SRV BR-R)
+network ALL=(ALL:ALL) ALL (HQ-R BR-R BR-SRV)
 
 IPERF
 После установки на обоих машинах, достаточно воспользоваться командной
@@ -191,7 +192,7 @@ SSH
 Port 2222
 Для применения конфигурации необходимо перезагрузить службу командой systemctl restart ssh
 Для перенаправления трафика воспользуемся утилитой iptables-persistent
-которая устанавливается командой apt install iptables-persistent
+которая устанавливается командой apt install iptables-persistent(в начале качаем)
 После установки создадим правило на подмену порта командой
 iptables -t nat -A PREROUTING -d 192.168.2.0/26 -p tcp -m tcp --dport 22 -j DNAT --to-destination 192.168.2.2:2222
 Для того что бы не прописывать команду при каждой перезагрузке сохраним нашу текущую конфигурацию командой 
@@ -212,7 +213,7 @@ nano /etc/ssh/sshd_config
 Шаг 2
 Следующим шагом необходимо создать ключ аутентификации ssh  с помощью команды 
 ssh-keygen -С «имя_устройства_с_которого_создан_ключ» везде необходимо нажать ENTER пока не создастся ключ 
-Теперь необходимо перенести публичный ключ, на сервер к которому мы будем получать доступ с помощью команды 
+Теперь необходимо перенести публичный ключ на сервер к которому мы будем получать доступ с помощью команды 
 ssh-copy-id имя@адрес
 Пример: 
 ssh-copy-id root@192.168.1.2
