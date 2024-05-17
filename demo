@@ -23,38 +23,38 @@ Dhclient -v
 Все можно ввести, введя команду nmtui, если его нет вводим команду apt install network-manager,
 в Set system hostname вводим имя, в Edit a connection вводим адреса, 
 и вторая вкладка перезапускаем чтобы настройки принялись.
-HQ - 192.168.2.0/26 255.255.255.192 - 2001::2:0/122 SRV.2 HQ-R.1
-HQ-ISP - 192.168.10.0/30 255.255.255.252 - 2001::11:0/125 HQ-R.1 ISP.2
+HQ - 192.168.2.0/29 255.255.255.192 - 2001::2:0/125 SRV.2 HQ-R.1
+HQ-ISP - 192.168.10.0/30 255.255.255.252 - 2001::10:0/126 HQ-R.1 ISP.2
 INT - 192.168.1.0/24 255.255.255.0 - 2001::1:0/120 CLI.2 ISP.1
-ISP-BR - 192.168.10.0/30 255.255.255.252 - 2001::10:0/125 BR-R.1 ISP.2
-BR - 192.168.3.0/28 - 255.255.255.240 - 2001::3:0/124 SRV.2 BR-R.1
+ISP-BR - 192.168.10.0/30 255.255.255.252 - 2001::10:0/126 BR-R.6 ISP.5
+BR - 192.168.3.0/27 - 255.255.255.240 - 2001::3:0/123 SRV.2 BR-R.1
 HQ-R
-192.168.2.1/26
-2001::2:1/122
-192.168.11.1/30
-2001::11:1/125
+192.168.2.1/29
+2001::2:1/125
+192.168.10.1/30
+2001::10:1/126
 HQ-SRV
-192.168.2.2/26
+192.168.2.2/29
 192.168.2.1
-2001::2:2/122
+2001::2:2/125
 2001::2:1
 BR-R
-192.168.3.1/28
-2001::3:1/124
+192.168.3.1/27
+2001::3:1/123
 192.168.10.1/30
-2001::10:1/125
+2001::10:1/126
 BR-SRV
-192.168.3.2/28
+192.168.3.2/27
 192.168.3.1
-2001::3:2/124
+2001::3:2/123
 2001::3:2
 ISP
 192.168.10.2/30
-2001::10:2/125
+2001::10:2/126
 192.168.1.1/24
 2001::1:1/120
 192.168.10.5/30
-2001::10:5/125
+2001::10:5/126
 CLI
 192.168.1.2/24
 192.168.1.1
@@ -72,12 +72,12 @@ Conf t
 Router ospf
 Ospf router-id 1.1.1.1|2.2.2.2|3.3.3.3
 HQ – Network 192.168.10.3/30 area 0  
-HQ – Network 192.168.2.0/26 area 1 
+HQ – Network 192.168.2.0/29 area 1 
 ISP – network 192.168.10.3/30 area 0 
 ISP – network 192.168.1.0/24 area 2 
 ISP – network 192.168.10.3/30 area 0 
 BR – network 192.168.10.3/30 area 0
-BR – network 192.168.3.0/28 area 3
+BR – network 192.168.3.0/27 area 3
 Ex
 Ex
 Write
@@ -90,11 +90,11 @@ Nano /etc/sysctl.conf
 Router ospf6
 Ospf6 router-id 0.0.0.1|0.0.0.2|0.0.0.3
 HQ – Area 0.0.0.0 range 2001::10:0/126
-HQ – Area 0.0.0.0 range 2001::2:0/122
+HQ – Area 0.0.0.0 range 2001::2:0/125
 ISP – area 0.0.0.0 range 2001::10:0/126
 ISP – area 0.0.0.0 range 2001::1:0/120
 BR – area 0.0.0.0 range 2001::10:0/126
-BR – area 0.0.0.0 range 2001::3:0/124
+BR – area 0.0.0.0 range 2001::3:0/123
 Ex
 Ex
 Write
@@ -104,6 +104,8 @@ Ex
 Прописываем interface ens224*
 	ipv6 ospf6 area 0.0.0.0
 	ex
+	!
+	interface ens256*
 И так на каждый интерфейс.
 		
 Настройка DHCP
@@ -122,24 +124,13 @@ nano /etc/default/isc-dhcp-server
 раскомментить все v4 и если по задание необходимо и v6
 изменить так же нужно: DHCPv4_PID=/var/run/dhclient.ens192.pid(192 если этот int интернет)
 
-subnet 192.168.2.0 netmask 255.255.255.192 {
- range 192.168.2.3 192.168.2.60;
+subnet 192.168.2.0 netmask 255.255.255.248 {
+ range 192.168.2.3 192.168.2.6;
  option routers 192.168.2.1;
 # option domain-name "hq.work";
 # option domain-name-servers 192.168.2.2;
 }
-#subnet 192.168.2.0 netmask 255.255.255.192 { (не надо)
- range 192.168.2.3 192.168.2.60;
- option routers 192.168.2.1;
-# option domain-name "br.work";
-# option domain-name-servers 192.168.2.2;
-}
-#subnet 192.168.2.0 netmask 255.255.255.192 { (не надо)
- range 192.168.2.3 192.168.2.60;
- option routers 192.168.2.1;
-# option domain-name "int.work";
-# option domain-name-servers 192.168.2.2;
-}
+
 после каждого изменения конфигурации необходимо перезагружать DHCP сервер для применения конфигурации
 systemctl stop isc-dhcp-server
 systemctl start isc-dhcp-server
@@ -153,7 +144,7 @@ option dhcp-renewal-time 3600;
 option dhcp-rebinding-time 7200;
 allow leasequery;
 
-subnet6 2001::2:0/122 {
+subnet6 2001::2:0/125 {
 	range6 2001::2:3 2001::2:3e;
 option dhcp6.name-servers 2001::2:2;
 option dhcp6.domain-search "hq.work";
